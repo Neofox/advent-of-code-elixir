@@ -1,7 +1,15 @@
 defmodule AdventOfCode.Day01 do
+  @spec part1(binary()) :: number()
   def part1(location_list) do
     {first_list, second_list} = generate_lists(location_list)
     Enum.sum(add_two_lists(Enum.sort(first_list), Enum.sort(second_list)))
+  end
+
+  @spec part2(binary()) :: number()
+  def part2(location_list) do
+    {first_list, second_list} = generate_lists(location_list)
+
+    Enum.sum(find_similarity(first_list, second_list))
   end
 
   defp generate_lists(str) do
@@ -24,12 +32,6 @@ defmodule AdventOfCode.Day01 do
         true -> abs(x - y)
       end
     end)
-  end
-
-  def part2(location_list) do
-    {first_list, second_list} = generate_lists(location_list)
-
-    Enum.sum(find_similarity(first_list, second_list))
   end
 
   defp find_similarity(list1, list2) do
