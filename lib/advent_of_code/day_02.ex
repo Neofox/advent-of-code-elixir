@@ -22,74 +22,43 @@ defmodule AdventOfCode.Day02 do
   end
 
   defp report_safe?(report, dampened \\ false) when is_list(report) do
-    case dampened do
-      true ->
-        all_levels_decreasing?(report, dampened) ||
-          all_levels_decreasing?(tl(report), dampened, true) ||
-          all_levels_increasing?(report, dampened) ||
-          all_levels_increasing?(tl(report), dampened, true)
-
-      false ->
-        all_levels_decreasing?(report) ||
-          all_levels_increasing?(report)
+    cond do
+      dampened -> check_dampened?(report)
+      true -> check_regular?(report)
     end
   end
 
-  defp all_levels_decreasing?([head | tail], dampened \\ false, problem_dampened \\ false) do
-    if dampened do
-      do_all_levels_decreasing_dampened?(head, tail, problem_dampened)
-    else
-      do_all_levels_decreasing?(head, tail)
+  defp check_dampened?(report) do
+    [
+      check_levels?(report, :decreasing, true),
+      check_levels?(tl(report), :decreasing, true, true),
+      check_levels?(report, :increasing, true),
+      check_levels?(tl(report), :increasing, true, true)
+    ]
+    |> Enum.any?()
+  end
+
+  defp check_regular?(sequence) do
+    check_levels?(sequence, :decreasing, false) || check_levels?(sequence, :increasing, false)
+  end
+
+  defp check_levels?([head | tail], direction, dampened, checked \\ false) do
+    do_check_levels?(head, tail, direction, dampened, checked)
+  end
+
+  defp do_check_levels?(_val, [], _direction, _dampened, _checked), do: true
+
+  defp do_check_levels?(val, [head | tail], direction, dampened, checked) do
+    diff = get_diff(val, head, direction)
+    valid? = diff >= 1 and diff <= 3
+
+    cond do
+      valid? -> do_check_levels?(head, tail, direction, dampened, checked)
+      dampened and not checked -> do_check_levels?(val, tail, direction, dampened, true)
+      true -> false
     end
   end
 
-  ### Non-dampened
-  defp do_all_levels_decreasing?(_val, []), do: true
-
-  defp do_all_levels_decreasing?(val, [head | tail]) do
-    case val - head >= 1 && val - head <= 3 do
-      true -> do_all_levels_decreasing?(head, tail)
-      false -> false
-    end
-  end
-
-  ### Dampened
-  defp do_all_levels_decreasing_dampened?(_val, [], _), do: true
-
-  defp do_all_levels_decreasing_dampened?(val, [head | tail], problem_dampened) do
-    case val - head >= 1 && val - head <= 3 do
-      true -> do_all_levels_decreasing_dampened?(head, tail, problem_dampened)
-      false when problem_dampened -> false
-      false -> do_all_levels_decreasing_dampened?(val, tail, true)
-    end
-  end
-
-  defp all_levels_increasing?([head | tail], dampened \\ false, problem_dampened \\ false) do
-    if dampened do
-      do_all_levels_increasing_dampened?(head, tail, problem_dampened)
-    else
-      do_all_levels_increasing?(head, tail)
-    end
-  end
-
-  ### Non-dampened
-  defp do_all_levels_increasing?(_val, []), do: true
-
-  defp do_all_levels_increasing?(val, [head | tail]) do
-    case head - val >= 1 && head - val <= 3 do
-      true -> do_all_levels_increasing?(head, tail)
-      false -> false
-    end
-  end
-
-  ### Dampened
-  defp do_all_levels_increasing_dampened?(_val, [], _), do: true
-
-  defp do_all_levels_increasing_dampened?(val, [head | tail], problem_dampened) do
-    case head - val >= 1 && head - val <= 3 do
-      true -> do_all_levels_increasing_dampened?(head, tail, problem_dampened)
-      false when problem_dampened -> false
-      false -> do_all_levels_increasing_dampened?(val, tail, true)
-    end
-  end
+  defp get_diff(val, head, :decreasing), do: val - head
+  defp get_diff(val, head, :increasing), do: head - val
 end
