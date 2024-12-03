@@ -23,12 +23,10 @@ defmodule AdventOfCode.Day02 do
   end
 
   defp report_dampened_safe?(report) do
-    Enum.any?([
-      check_levels(report, :decreasing, allow_skip: true),
-      check_levels(tl(report), :decreasing, allow_skip: true, skipped: true),
-      check_levels(report, :increasing, allow_skip: true),
-      check_levels(tl(report), :increasing, allow_skip: true, skipped: true)
-    ])
+    Enum.any?(0..(length(report) - 1), fn skip_pos ->
+      levels = List.delete_at(report, skip_pos)
+      check_levels(levels, :decreasing) || check_levels(levels, :increasing)
+    end)
   end
 
   @spec check_levels(list(), :decreasing | :increasing, keyword(boolean())) :: boolean()
