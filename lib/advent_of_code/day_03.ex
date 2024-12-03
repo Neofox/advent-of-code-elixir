@@ -16,7 +16,7 @@ defmodule AdventOfCode.Day03 do
   end
 
   defp extract_params(instruction) do
-    for [_, x, y] <- Regex.scan(@mul_regex, instruction) do
+    for [_mul, x, y] <- Regex.scan(@mul_regex, instruction) do
       String.to_integer(x) * String.to_integer(y)
     end
   end
