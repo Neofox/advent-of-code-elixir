@@ -31,10 +31,7 @@ defmodule AdventOfCode.Day02 do
     ])
   end
 
-  @spec check_levels([non_neg_integer(), ...], :decreasing | :increasing,
-          allow_skip: boolean(),
-          skipped: boolean()
-        ) :: boolean()
+  @spec check_levels(list(), :decreasing | :increasing, keyword(boolean())) :: boolean()
   defp check_levels(list, direction, opts \\ [])
 
   defp check_levels([head | tail], direction, opts) do
