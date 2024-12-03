@@ -1,12 +1,15 @@
 defmodule AdventOfCode.Day02 do
+  @spec part1(binary()) :: non_neg_integer()
   def part1(unusual_data) do
     unusual_data |> make_report() |> Enum.count(&report_safe?/1)
   end
 
+  @spec part2(binary()) :: non_neg_integer()
   def part2(unusual_data) do
     unusual_data |> make_report() |> Enum.count(&report_dampened_safe?/1)
   end
 
+  @spec make_report(binary()) :: [non_neg_integer(), ...]
   defp make_report(unusual_data) do
     unusual_data
     |> String.split("\n", trim: true)
@@ -15,8 +18,8 @@ defmodule AdventOfCode.Day02 do
   end
 
   defp report_safe?(report) do
-    check_levels(report, :decreasing, []) ||
-      check_levels(report, :increasing, [])
+    check_levels(report, :decreasing) ||
+      check_levels(report, :increasing)
   end
 
   defp report_dampened_safe?(report) do
@@ -27,6 +30,12 @@ defmodule AdventOfCode.Day02 do
       check_levels(tl(report), :increasing, allow_skip: true, skipped: true)
     ])
   end
+
+  @spec check_levels([non_neg_integer(), ...], :decreasing | :increasing,
+          allow_skip: boolean(),
+          skipped: boolean()
+        ) :: boolean()
+  defp check_levels(list, direction, opts \\ [])
 
   defp check_levels([head | tail], direction, opts) do
     do_check_levels(head, tail, direction, opts)
