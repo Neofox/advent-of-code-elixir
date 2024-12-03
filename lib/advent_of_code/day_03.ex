@@ -8,17 +8,15 @@ defmodule AdventOfCode.Day03 do
   end
 
   defp extract_params(instruction) do
-    regex = ~r/mul\((\d+),(\d+)\)/
-    all_params = Regex.scan(regex, instruction)
-
-    all_params
+    ~r/mul\((\d+),(\d+)\)/
+    |> Regex.scan(instruction)
     |> Stream.map(fn [_, x, y] -> {String.to_integer(x), String.to_integer(y)} end)
     |> Stream.map(fn {x, y} -> x * y end)
     |> Enum.sum()
   end
 
   defp remove_disabled_instructions(instruction) do
-    regex = ~r/don't\(\)(.*?)do\(\)/s
-    Regex.replace(regex, instruction, "")
+    ~r/don't\(\)(.*?)do\(\)/s
+    |> Regex.replace(instruction, "")
   end
 end
