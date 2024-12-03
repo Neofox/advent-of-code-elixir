@@ -4,57 +4,51 @@ defmodule AdventOfCode.Day02 do
   end
 
   def part2(unusual_data) do
-    unusual_data |> make_report() |> Enum.count(&report_safe?(&1, true))
+    unusual_data |> make_report() |> Enum.count(&report_dampened_safe?/1)
   end
 
   defp make_report(unusual_data) do
     unusual_data
     |> String.split("\n", trim: true)
-    |> Enum.map(&parse_line/1)
+    |> Enum.map(&String.split/1)
+    |> Enum.map(&Enum.map(&1, fn x -> String.to_integer(x) end))
   end
 
-  defp parse_line(line) do
-    line
-    |> String.split()
-    |> Enum.map(&String.to_integer/1)
+  defp report_safe?(report) do
+    check_levels(report, :decreasing, []) ||
+      check_levels(report, :increasing, [])
   end
 
-  defp report_safe?(report, dampened \\ false) when is_list(report) do
-    if dampened do
-      check_dampened(report)
-    else
-      check_regular(report)
-    end
-  end
-
-  defp check_dampened(report) do
+  defp report_dampened_safe?(report) do
     Enum.any?([
-      check_levels(report, :decreasing, true),
-      check_levels(tl(report), :decreasing, true, true),
-      check_levels(report, :increasing, true),
-      check_levels(tl(report), :increasing, true, true)
+      check_levels(report, :decreasing, allow_skip: true),
+      check_levels(tl(report), :decreasing, allow_skip: true, skipped: true),
+      check_levels(report, :increasing, allow_skip: true),
+      check_levels(tl(report), :increasing, allow_skip: true, skipped: true)
     ])
   end
 
-  defp check_regular(sequence) do
-    check_levels(sequence, :decreasing, false) ||
-      check_levels(sequence, :increasing, false)
+  defp check_levels([head | tail], direction, opts) do
+    do_check_levels(head, tail, direction, opts)
   end
 
-  defp check_levels([head | tail], direction, dampened, checked \\ false) do
-    do_check_levels(head, tail, direction, dampened, checked)
-  end
+  defp do_check_levels(_val, [], _direction, _opts), do: true
 
-  defp do_check_levels(_val, [], _direction, _dampened, _checked), do: true
+  defp do_check_levels(val, [head | tail], direction, opts) do
+    allow_skip = Keyword.get(opts, :allow_skip, false)
+    skipped = Keyword.get(opts, :skipped, false)
 
-  defp do_check_levels(val, [head | tail], direction, dampened, checked) do
     diff = get_diff(val, head, direction)
-    valid? = diff >= 1 and diff <= 3
 
     cond do
-      valid? -> do_check_levels(head, tail, direction, dampened, checked)
-      dampened and not checked -> do_check_levels(val, tail, direction, dampened, true)
-      true -> false
+      diff >= 1 and diff <= 3 ->
+        do_check_levels(head, tail, direction, opts)
+
+      allow_skip and not skipped ->
+        do_check_levels(val, tail, direction, Keyword.put(opts, :skipped, true))
+
+      true ->
+        false
     end
   end
 
