@@ -38,20 +38,18 @@ defmodule AdventOfCode.Day02 do
     allow_skip = Keyword.get(opts, :allow_skip, false)
     skipped = Keyword.get(opts, :skipped, false)
 
-    diff = get_diff(val, head, direction)
-
-    cond do
-      diff >= 1 and diff <= 3 ->
+    case get_diff(val, head, direction) do
+      diff when diff >= 1 and diff <= 3 ->
         do_check_levels(head, tail, direction, opts)
 
-      allow_skip and not skipped ->
+      _ when allow_skip and not skipped ->
         do_check_levels(val, tail, direction, Keyword.put(opts, :skipped, true))
 
-      true ->
+      _ ->
         false
     end
   end
 
-  defp get_diff(val, head, :decreasing), do: val - head
-  defp get_diff(val, head, :increasing), do: head - val
+  defp get_diff(first_val, second_val, :decreasing), do: first_val - second_val
+  defp get_diff(first_val, second_val, :increasing), do: second_val - first_val
 end
