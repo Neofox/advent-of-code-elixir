@@ -1,35 +1,29 @@
 defmodule AdventOfCode.Day04 do
   @directions [
-    # Right
     {1, 0},
-    # Left
     {-1, 0},
-    # Down
     {0, 1},
-    # Up
     {0, -1},
-    # Diagonal down-right
     {1, 1},
-    # Diagonal down-left
     {-1, 1},
-    # Diagonal up-right
     {1, -1},
-    # Diagonal up-left
     {-1, -1}
   ]
 
   def part1(word_puzzle) do
     word_grid = make_word_grid(word_puzzle)
-    x_positions = list_of_char_positions(word_grid, "X")
 
-    look_for_xmas(x_positions, word_grid)
+    list_of_char_positions(word_grid, "X")
+    |> look_for_xmas(word_grid)
+    |> Enum.sum()
   end
 
   def part2(word_puzzle) do
     word_grid = make_word_grid(word_puzzle)
-    a_positions = list_of_char_positions(word_grid, "A")
 
-    look_for_mas_cross(a_positions, word_grid)
+    list_of_char_positions(word_grid, "A")
+    |> look_for_mas_cross(word_grid)
+    |> Enum.sum()
   end
 
   defp make_word_grid(word_grid) do
@@ -45,8 +39,7 @@ defmodule AdventOfCode.Day04 do
 
   defp matches_pattern?(word_grid, {x, y}, pattern) do
     Enum.all?(pattern, fn {dx, dy, expected_char} ->
-      pos = {x + dx, y + dy}
-      has_char_at?(word_grid, pos, expected_char)
+      has_char_at?(word_grid, {x + dx, y + dy}, expected_char)
     end)
   end
 
@@ -56,61 +49,31 @@ defmodule AdventOfCode.Day04 do
     |> Enum.map(fn {pos, _c} -> pos end)
   end
 
-  @spec look_for_xmas(list({integer(), integer()}), map()) :: integer()
+  @spec look_for_xmas(list({integer(), integer()}), map()) :: list(integer())
   defp look_for_xmas(x_positions, word_grid) do
-    Enum.map(@directions, fn {dx, dy} ->
+    for {dx, dy} <- @directions do
       pattern = [
         {dx, dy, "M"},
         {2 * dx, 2 * dy, "A"},
         {3 * dx, 3 * dy, "S"}
       ]
 
-      Enum.count(x_positions, fn pos ->
-        matches_pattern?(word_grid, pos, pattern)
-      end)
-    end)
-    |> Enum.sum()
+      Enum.count(x_positions, &matches_pattern?(word_grid, &1, pattern))
+    end
   end
 
-  @spec look_for_mas_cross(list({integer(), integer()}), map()) :: integer()
+  @spec look_for_mas_cross(list({integer(), integer()}), map()) :: list(integer())
   defp look_for_mas_cross(a_positions, word_grid) do
     patterns = [
-      # Top
-      [
-        {-1, 1, "M"},
-        {1, 1, "M"},
-        {-1, -1, "S"},
-        {1, -1, "S"}
-      ],
-      # Bottom
-      [
-        {-1, -1, "M"},
-        {1, -1, "M"},
-        {-1, 1, "S"},
-        {1, 1, "S"}
-      ],
-      # Left
-      [
-        {-1, -1, "S"},
-        {-1, 1, "S"},
-        {1, -1, "M"},
-        {1, 1, "M"}
-      ],
-      # Right
-      [
-        {1, -1, "S"},
-        {1, 1, "S"},
-        {-1, -1, "M"},
-        {-1, 1, "M"}
-      ]
+      [{-1, 1, "M"}, {1, 1, "M"}, {-1, -1, "S"}, {1, -1, "S"}],
+      [{-1, -1, "M"}, {1, -1, "M"}, {-1, 1, "S"}, {1, 1, "S"}],
+      [{-1, -1, "S"}, {-1, 1, "S"}, {1, -1, "M"}, {1, 1, "M"}],
+      [{1, -1, "S"}, {1, 1, "S"}, {-1, -1, "M"}, {-1, 1, "M"}]
     ]
 
-    Enum.map(a_positions, fn pos ->
-      Enum.count(patterns, fn pattern ->
-        matches_pattern?(word_grid, pos, pattern)
-      end)
-    end)
-    |> Enum.sum()
+    for pattern <- patterns do
+      Enum.count(a_positions, &matches_pattern?(word_grid, &1, pattern))
+    end
   end
 
   defp has_char_at?(word_grid, pos, char) do
