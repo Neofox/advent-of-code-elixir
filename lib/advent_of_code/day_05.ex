@@ -28,21 +28,17 @@ defmodule AdventOfCode.Day05 do
   end
 
   defp parse_ordering_rules(safety_manual_input) do
-    safety_manual_input
-    |> String.split("\n", trim: true)
-    |> Enum.map(fn line ->
+    for line <- String.split(safety_manual_input, "\n", trim: true) do
       [before_page, after_page] = String.split(line, "|")
       {String.to_integer(before_page), String.to_integer(after_page)}
-    end)
+    end
     |> MapSet.new()
   end
 
   defp parse_pages_to_produce(safety_manual_input) do
-    safety_manual_input
-    |> String.split("\n", trim: true)
-    |> Enum.map(fn line ->
+    for line <- String.split(safety_manual_input, "\n", trim: true) do
       String.split(line, ",") |> Enum.map(&String.to_integer/1)
-    end)
+    end
   end
 
   defp safe_to_print?([], _pages_ordering_rules), do: true
