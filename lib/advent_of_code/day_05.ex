@@ -31,8 +31,10 @@ defmodule AdventOfCode.Day05 do
     safety_manual_input
     |> String.split("\n", trim: true)
     |> Enum.map(fn line ->
-      String.split(line, "|") |> Enum.map(&String.to_integer/1) |> List.to_tuple()
+      [before_page, after_page] = String.split(line, "|")
+      {String.to_integer(before_page), String.to_integer(after_page)}
     end)
+    |> MapSet.new()
   end
 
   defp parse_pages_to_produce(safety_manual_input) do
@@ -44,6 +46,7 @@ defmodule AdventOfCode.Day05 do
   end
 
   defp safe_to_print?([], _pages_ordering_rules), do: true
+  defp safe_to_print?([_page], _pages_ordering_rules), do: true
 
   defp safe_to_print?([page | following_pages], pages_ordering_rules) do
     not ordering_rule_exists?(page, following_pages, pages_ordering_rules) and
@@ -51,13 +54,13 @@ defmodule AdventOfCode.Day05 do
   end
 
   defp ordering_rule_exists?(page, list_of_pages, pages_ordering_rules) do
-    Enum.any?(pages_ordering_rules, fn {page_before, page_after} ->
-      page_after === page and page_before in list_of_pages
+    Enum.any?(list_of_pages, fn page_before ->
+      MapSet.member?(pages_ordering_rules, {page_before, page})
     end)
   end
 
   defp get_page_in_middle(pages_to_produce) do
-    pages_to_produce |> Enum.at(div(length(pages_to_produce), 2))
+    Enum.at(pages_to_produce, div(length(pages_to_produce), 2))
   end
 
   defp fix_pages_order(pages_to_produce, pages_ordering_rules) do
