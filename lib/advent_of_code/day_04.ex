@@ -1,20 +1,35 @@
 defmodule AdventOfCode.Day04 do
+  @directions [
+    # Right
+    {1, 0},
+    # Left
+    {-1, 0},
+    # Down
+    {0, 1},
+    # Up
+    {0, -1},
+    # Diagonal down-right
+    {1, 1},
+    # Diagonal down-left
+    {-1, 1},
+    # Diagonal up-right
+    {1, -1},
+    # Diagonal up-left
+    {-1, -1}
+  ]
+
   def part1(word_puzzle) do
     word_grid = make_word_grid(word_puzzle)
+    x_positions = list_of_char_positions(word_grid, "X")
 
-    x_positions =
-      word_grid
-      |> list_of_char_positions("X")
-
-    look_for_xmas(x_positions, word_grid) |> Enum.sum()
+    look_for_xmas(x_positions, word_grid)
   end
 
   def part2(word_puzzle) do
     word_grid = make_word_grid(word_puzzle)
+    a_positions = list_of_char_positions(word_grid, "A")
 
-    a_positions = word_grid |> list_of_char_positions("A")
-
-    look_for_mas_cross(a_positions, word_grid) |> Enum.sum()
+    look_for_mas_cross(a_positions, word_grid)
   end
 
   defp make_word_grid(word_grid) do
@@ -23,100 +38,82 @@ defmodule AdventOfCode.Day04 do
     |> Enum.map(&String.graphemes/1)
     |> Enum.with_index()
     |> Enum.flat_map(fn {row, y} ->
-      Enum.with_index(row) |> Enum.map(fn {char, x} -> {char, {x, y}} end)
+      Enum.with_index(row) |> Enum.map(fn {char, x} -> {{x, y}, char} end)
+    end)
+    |> Map.new()
+  end
+
+  defp matches_pattern?(word_grid, {x, y}, pattern) do
+    Enum.all?(pattern, fn {dx, dy, expected_char} ->
+      pos = {x + dx, y + dy}
+      has_char_at?(word_grid, pos, expected_char)
     end)
   end
 
   defp list_of_char_positions(word_grid, char) do
     word_grid
-    |> Enum.filter(fn {c, _} -> c == char end)
-    |> Enum.map(fn {_, {x, y}} -> {x, y} end)
+    |> Enum.filter(fn {_pos, c} -> c == char end)
+    |> Enum.map(fn {pos, _c} -> pos end)
   end
 
+  @spec look_for_xmas(list({integer(), integer()}), map()) :: integer()
   defp look_for_xmas(x_positions, word_grid) do
-    x_positions
-    |> Enum.map(fn {x, y} ->
-      [
-        # Right
-        has_char_at?({x + 1, y}, "M", word_grid) and
-          has_char_at?({x + 2, y}, "A", word_grid) and
-          has_char_at?({x + 3, y}, "S", word_grid),
-
-        # Left
-        has_char_at?({x - 1, y}, "M", word_grid) and
-          has_char_at?({x - 2, y}, "A", word_grid) and
-          has_char_at?({x - 3, y}, "S", word_grid),
-
-        # Down
-        has_char_at?({x, y + 1}, "M", word_grid) and
-          has_char_at?({x, y + 2}, "A", word_grid) and
-          has_char_at?({x, y + 3}, "S", word_grid),
-
-        # Up
-        has_char_at?({x, y - 1}, "M", word_grid) and
-          has_char_at?({x, y - 2}, "A", word_grid) and
-          has_char_at?({x, y - 3}, "S", word_grid),
-
-        # Diagonal down-right
-        has_char_at?({x + 1, y + 1}, "M", word_grid) and
-          has_char_at?({x + 2, y + 2}, "A", word_grid) and
-          has_char_at?({x + 3, y + 3}, "S", word_grid),
-
-        # Diagonal down-left
-        has_char_at?({x - 1, y + 1}, "M", word_grid) and
-          has_char_at?({x - 2, y + 2}, "A", word_grid) and
-          has_char_at?({x - 3, y + 3}, "S", word_grid),
-
-        # Diagonal up-right
-        has_char_at?({x + 1, y - 1}, "M", word_grid) and
-          has_char_at?({x + 2, y - 2}, "A", word_grid) and
-          has_char_at?({x + 3, y - 3}, "S", word_grid),
-
-        # Diagonal up-left
-        has_char_at?({x - 1, y - 1}, "M", word_grid) and
-          has_char_at?({x - 2, y - 2}, "A", word_grid) and
-          has_char_at?({x - 3, y - 3}, "S", word_grid)
+    Enum.map(@directions, fn {dx, dy} ->
+      pattern = [
+        {dx, dy, "M"},
+        {2 * dx, 2 * dy, "A"},
+        {3 * dx, 3 * dy, "S"}
       ]
-      |> Enum.count(& &1)
+
+      Enum.count(x_positions, fn pos ->
+        matches_pattern?(word_grid, pos, pattern)
+      end)
     end)
+    |> Enum.sum()
   end
 
+  @spec look_for_mas_cross(list({integer(), integer()}), map()) :: integer()
   defp look_for_mas_cross(a_positions, word_grid) do
-    a_positions
-    |> Enum.map(fn {x, y} ->
+    patterns = [
+      # Top
       [
-        # Top
-        has_char_at?({x - 1, y + 1}, "M", word_grid) and
-          has_char_at?({x + 1, y + 1}, "M", word_grid) and
-          has_char_at?({x - 1, y - 1}, "S", word_grid) and
-          has_char_at?({x + 1, y - 1}, "S", word_grid),
-
-        # Bottom
-        has_char_at?({x - 1, y - 1}, "M", word_grid) and
-          has_char_at?({x + 1, y - 1}, "M", word_grid) and
-          has_char_at?({x - 1, y + 1}, "S", word_grid) and
-          has_char_at?({x + 1, y + 1}, "S", word_grid),
-
-        # Left
-        has_char_at?({x - 1, y - 1}, "S", word_grid) and
-          has_char_at?({x - 1, y + 1}, "S", word_grid) and
-          has_char_at?({x + 1, y - 1}, "M", word_grid) and
-          has_char_at?({x + 1, y + 1}, "M", word_grid),
-
-        # Right
-        has_char_at?({x + 1, y - 1}, "S", word_grid) and
-          has_char_at?({x + 1, y + 1}, "S", word_grid) and
-          has_char_at?({x - 1, y - 1}, "M", word_grid) and
-          has_char_at?({x - 1, y + 1}, "M", word_grid)
+        {-1, 1, "M"},
+        {1, 1, "M"},
+        {-1, -1, "S"},
+        {1, -1, "S"}
+      ],
+      # Bottom
+      [
+        {-1, -1, "M"},
+        {1, -1, "M"},
+        {-1, 1, "S"},
+        {1, 1, "S"}
+      ],
+      # Left
+      [
+        {-1, -1, "S"},
+        {-1, 1, "S"},
+        {1, -1, "M"},
+        {1, 1, "M"}
+      ],
+      # Right
+      [
+        {1, -1, "S"},
+        {1, 1, "S"},
+        {-1, -1, "M"},
+        {-1, 1, "M"}
       ]
-      |> Enum.count(& &1)
+    ]
+
+    Enum.map(a_positions, fn pos ->
+      Enum.count(patterns, fn pattern ->
+        matches_pattern?(word_grid, pos, pattern)
+      end)
     end)
+    |> Enum.sum()
   end
 
-  defp has_char_at?({x, y}, char, word_grid) do
-    case Enum.find(word_grid, fn {c, pos} -> pos == {x, y} and c == char end) do
-      nil -> false
-      _ -> true
-    end
+  defp has_char_at?(word_grid, pos, char) do
+    Map.get(word_grid, pos) == char
   end
 end
