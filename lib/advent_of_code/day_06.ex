@@ -23,23 +23,24 @@ defmodule AdventOfCode.Day06 do
     {:out_of_bounds, visited_states} = move_guard(map, guard_position, :up)
 
     # Extract just the positions from the visited states
-    visited_positions = Enum.map(visited_states, fn {pos, _dir} -> pos end) |> Enum.uniq() |> tl()
+    visited_positions =
+      Enum.map(visited_states, fn {pos, _dir} -> pos end)
+      |> Enum.uniq()
+      |> Enum.drop(1)
+      |> Enum.drop(-1)
 
     for position <- visited_positions do
       Task.async(fn ->
-        # IO.inspect(position, label: "obstacle position for task #{inspect(self())}")
-
         map = add_obstacle(map, position)
-        result = move_guard(map, guard_position, :up)
-        # IO.inspect(result, label: "result for task #{inspect(self())}")
-        result
+        move_guard(map, guard_position, :up)
       end)
     end
     |> Enum.map(&Task.await/1)
-    |> Enum.count(fn
+    |> Enum.filter(fn
       {:loop, _, _} -> true
-      {:out_of_bounds, _} -> false
+      _ -> false
     end)
+    |> Enum.count()
   end
 
   defp make_map_grid(map_input) do
@@ -104,8 +105,7 @@ defmodule AdventOfCode.Day06 do
   end
 
   defp is_loop?({next_pos, looking_direction}, visited_states) do
-    MapSet.member?(visited_states, {next_pos, looking_direction}) and
-      MapSet.size(visited_states) > 4
+    MapSet.member?(visited_states, {next_pos, looking_direction})
   end
 
   defp is_out_of_bounds?(map, {x, y}) do
