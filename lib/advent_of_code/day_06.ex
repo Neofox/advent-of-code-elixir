@@ -1,4 +1,18 @@
 defmodule AdventOfCode.Day06 do
+  @directions %{
+    up: {0, -1},
+    down: {0, 1},
+    left: {1, 0},
+    right: {-1, 0}
+  }
+
+  @turns %{
+    up: :left,
+    left: :down,
+    down: :right,
+    right: :up
+  }
+
   def part1(map_input) do
     map = make_map_grid(map_input)
 
@@ -24,88 +38,66 @@ defmodule AdventOfCode.Day06 do
 
     # Extract just the positions from the visited states
     visited_positions =
-      Enum.map(visited_states, fn {pos, _dir} -> pos end)
+      visited_states
+      |> Enum.map(fn {pos, _dir} -> pos end)
       |> Enum.uniq()
-      |> Enum.drop(1)
-      |> Enum.drop(-1)
+      |> Enum.slice(1..-2//1)
 
-    for position <- visited_positions do
-      Task.async(fn ->
-        map = add_obstacle(map, position)
-        move_guard(map, guard_position, :up)
-      end)
-    end
-    |> Enum.map(&Task.await/1)
+    Task.async_stream(
+      visited_positions,
+      fn position ->
+        map_with_obstacle = add_obstacle(map, position)
+        move_guard(map_with_obstacle, guard_position, :up)
+      end
+    )
     |> Enum.filter(fn
-      {:loop, _, _} -> true
+      {:ok, {:loop, _, _}} -> true
       _ -> false
     end)
     |> Enum.count()
   end
 
   defp make_map_grid(map_input) do
-    map_input
-    |> String.split("\n", trim: true)
-    |> Enum.map(&String.graphemes/1)
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {row, y} ->
-      Enum.with_index(row) |> Enum.map(fn {char, x} -> {{x, y}, char} end)
-    end)
-    |> Map.new()
+    for {line, y} <- map_input |> String.split("\n", trim: true) |> Enum.with_index(),
+        {char, x} <- line |> String.graphemes() |> Enum.with_index(),
+        into: %{},
+        do: {{x, y}, char}
   end
 
-  defp move_guard(map, guard_position, looking_direction) do
-    visited_states = MapSet.new([{guard_position, looking_direction}])
+  defp move_guard(map, guard_position, looking_dir) do
+    visited_states = MapSet.new([{guard_position, looking_dir}])
 
     do_move_guard(
       map,
       guard_position,
-      looking_direction,
+      looking_dir,
       visited_states
     )
   end
 
-  defp do_move_guard(map, guard_position, looking_direction, visited_states) do
-    {x, y} = guard_position
-
-    next_pos =
-      case looking_direction do
-        :up -> {x, y - 1}
-        :down -> {x, y + 1}
-        :left -> {x + 1, y}
-        :right -> {x - 1, y}
-      end
+  defp do_move_guard(map, guard_position, looking_dir, visited_states) do
+    next_pos = calculate_next_position(guard_position, looking_dir)
 
     cond do
-      is_loop?({next_pos, looking_direction}, visited_states) ->
-        {:loop, visited_states, {next_pos, looking_direction}}
+      MapSet.member?(visited_states, {next_pos, looking_dir}) ->
+        {:loop, visited_states, {next_pos, looking_dir}}
 
       is_out_of_bounds?(map, next_pos) ->
         {:out_of_bounds, visited_states}
 
       is_wall?(map, next_pos) ->
-        new_direction = turn_left(looking_direction)
+        new_direction = turn_left(looking_dir)
         new_state = {guard_position, new_direction}
-
-        do_move_guard(
-          map,
-          guard_position,
-          new_direction,
-          MapSet.put(visited_states, new_state)
-        )
+        do_move_guard(map, guard_position, new_direction, MapSet.put(visited_states, new_state))
 
       true ->
         do_move_guard(
           map,
           next_pos,
-          looking_direction,
-          MapSet.put(visited_states, {next_pos, looking_direction})
+          looking_dir,
+          MapSet.put(visited_states, {next_pos, looking_dir})
         )
     end
-  end
-
-  defp is_loop?({next_pos, looking_direction}, visited_states) do
-    MapSet.member?(visited_states, {next_pos, looking_direction})
   end
 
   defp is_out_of_bounds?(map, {x, y}) do
@@ -116,10 +108,12 @@ defmodule AdventOfCode.Day06 do
     Map.get(map, {x, y}) == "#"
   end
 
-  defp turn_left(:up), do: :left
-  defp turn_left(:left), do: :down
-  defp turn_left(:down), do: :right
-  defp turn_left(:right), do: :up
+  defp calculate_next_position({x, y}, direction) do
+    {dx, dy} = @directions[direction]
+    {x + dx, y + dy}
+  end
+
+  defp turn_left(direction), do: @turns[direction]
 
   defp add_obstacle(map, {x, y}) do
     Map.put(map, {x, y}, "#")
