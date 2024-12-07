@@ -27,26 +27,22 @@ defmodule AdventOfCode.Day04 do
   end
 
   defp make_word_grid(word_grid) do
-    word_grid
-    |> String.split("\n", trim: true)
-    |> Enum.map(&String.graphemes/1)
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {row, y} ->
-      Enum.with_index(row) |> Enum.map(fn {char, x} -> {{x, y}, char} end)
-    end)
-    |> Map.new()
+    for {line, y} <- word_grid |> String.split("\n", trim: true) |> Enum.with_index(),
+        {char, x} <- line |> String.graphemes() |> Enum.with_index(),
+        into: %{},
+        do: {{x, y}, char}
   end
 
   defp matches_pattern?(word_grid, {x, y}, pattern) do
     Enum.all?(pattern, fn {dx, dy, expected_char} ->
-      has_char_at?(word_grid, {x + dx, y + dy}, expected_char)
+      Map.get(word_grid, {x + dx, y + dy}) === expected_char
     end)
   end
 
   defp list_of_char_positions(word_grid, char) do
     word_grid
-    |> Enum.filter(fn {_pos, c} -> c == char end)
-    |> Enum.map(fn {pos, _c} -> pos end)
+    |> Map.filter(fn {_pos, c} -> c == char end)
+    |> Map.keys()
   end
 
   @spec look_for_xmas(list({integer(), integer()}), map()) :: list(integer())
@@ -74,9 +70,5 @@ defmodule AdventOfCode.Day04 do
     for pattern <- patterns do
       Enum.count(a_positions, &matches_pattern?(word_grid, &1, pattern))
     end
-  end
-
-  defp has_char_at?(word_grid, pos, char) do
-    Map.get(word_grid, pos) == char
   end
 end
