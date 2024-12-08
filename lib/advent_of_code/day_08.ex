@@ -1,7 +1,6 @@
 defmodule AdventOfCode.Day08 do
   def part1(antenna_input) do
     antenna_map = build_antenna_map(antenna_input)
-
     antenna_positions = find_antenna_positions(antenna_map)
 
     find_all_antenna_pairs(antenna_positions)
@@ -11,7 +10,15 @@ defmodule AdventOfCode.Day08 do
     |> Enum.count()
   end
 
-  def part2(_args) do
+  def part2(antenna_input) do
+    antenna_map = build_antenna_map(antenna_input)
+    antenna_positions = find_antenna_positions(antenna_map)
+
+    find_all_antenna_pairs(antenna_positions)
+    |> get_all_anti_nodes(antenna_map)
+    |> Enum.uniq()
+    |> Enum.sort()
+    |> Enum.count()
   end
 
   defp build_antenna_map(map_input) do
@@ -50,6 +57,29 @@ defmodule AdventOfCode.Day08 do
         {x1 - dx, y1 - dy},
         {x2 + dx, y2 + dy}
       ]
+    end)
+  end
+
+  defp get_all_anti_nodes(antenna_pairs, antenna_map) do
+    {max_x, max_y} = Map.keys(antenna_map) |> Enum.max()
+
+    antenna_pairs
+    |> Enum.flat_map(fn [pos1, pos2] ->
+      {dx, dy} = calculate_distance(pos1, pos2)
+      {x1, y1} = pos1
+      {x2, y2} = pos2
+
+      # Generate nodes in negative direction from pos1
+      negative_nodes =
+        Stream.iterate({x1 - dx, y1 - dy}, fn {x, y} -> {x - dx, y - dy} end)
+        |> Enum.take_while(fn {x, y} -> x >= 0 and y >= 0 and x <= max_x and y <= max_y end)
+
+      # Generate nodes in positive direction from pos2
+      positive_nodes =
+        Stream.iterate({x2 + dx, y2 + dy}, fn {x, y} -> {x + dx, y + dy} end)
+        |> Enum.take_while(fn {x, y} -> x >= 0 and y >= 0 and x <= max_x and y <= max_y end)
+
+      negative_nodes ++ positive_nodes ++ [pos1, pos2]
     end)
   end
 
