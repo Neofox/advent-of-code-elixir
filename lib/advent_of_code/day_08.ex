@@ -1,4 +1,7 @@
 defmodule AdventOfCode.Day08 do
+  @type point :: {integer, integer}
+  @type grid :: %{point => String.t()}
+
   def part1(antenna_input) do
     antenna_map = build_antenna_map(antenna_input)
     antenna_positions = find_antenna_positions(antenna_map)
